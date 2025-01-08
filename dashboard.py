@@ -36,8 +36,16 @@ if response.status_code == 200:
 
             for bookmaker in bookmakers:
                 bookmaker_name = bookmaker.get('title', 'No title')
-                bookmaker_odds = bookmaker.get('odds', 'No odds available')
-                st.write(f"Bookmaker: {bookmaker_name} | Odds: {bookmaker_odds}")
+                st.write(f"Bookmaker: {bookmaker_name}")
+
+                # Extract odds from outcomes
+                markets = bookmaker.get('markets', [])
+                for market in markets:
+                    outcomes = market.get('outcomes', [])
+                    for outcome in outcomes:
+                        team_name = outcome.get('name', 'No team name')
+                        odds = outcome.get('price', 'No odds available')
+                        st.write(f"  Team: {team_name} | Odds: {odds}")
         else:
             st.write("No bookmakers data found in the first item.")
     else:
