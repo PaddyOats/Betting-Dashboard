@@ -171,9 +171,6 @@ if response.status_code == 200:
                 st.subheader("Bet of the Day")
                 st.write(f"**Best Bet of the Day:** {best_bet_of_day} with odds {best_bet_odds}")
                 
-            # If no data was returned
-            else:
-                st.error("No data found for the requested leagues.")
         except Exception as e:
             st.error(f"Error processing the data: {str(e)}")
 else:
