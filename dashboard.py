@@ -15,21 +15,29 @@ response = requests.get(url)
 
 if response.status_code == 200:
     data = response.json()
+    
+    # Show the structure of the data
     st.write("Raw API Data:", data)  # Display raw response for inspection
 
-    # Check if bookmakers exist in the data
     if isinstance(data, list) and len(data) > 0:
         first_item = data[0]
         st.write("First item in data:", first_item)  # Show first data item
-        bookmakers = first_item.get('bookmakers', [])
+
+        # Display the fields of the first item
+        st.write("Fields in the first item:", first_item.keys())
         
-        # Check if bookmakers exist
+        # Check if bookmakers exist in the first item
+        bookmakers = first_item.get('bookmakers', [])
+        st.write("Bookmakers field exists:", bool(bookmakers))
+
+        # If bookmakers exist, iterate through each bookmaker and display data
         if bookmakers:
-            st.write("Bookmakers data:", bookmakers)
             for bookmaker in bookmakers:
-                st.write(f"Bookmaker: {bookmaker.get('title', 'Unknown')} Odds: {bookmaker.get('odds', 'No odds available')}")
+                bookmaker_name = bookmaker.get('title', 'Unknown Bookmaker')
+                bookmaker_odds = bookmaker.get('odds', 'No odds available')
+                st.write(f"Bookmaker: {bookmaker_name} | Odds: {bookmaker_odds}")
         else:
-            st.write("No bookmakers data found.")
+            st.write("No bookmakers data found in the first item.")
     else:
         st.write("Data is empty or malformed.")
 else:
