@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import json
 
 # Title
 st.title("Betting Dashboard")
@@ -19,7 +20,7 @@ if response.status_code == 200:
     data = response.json()
     
     # Displaying the entire API response for debugging
-    st.write("Raw API Response:", data)  # This should print the whole response
+    st.text(json.dumps(data, indent=4))  # This will print the response in a readable format
 
     if isinstance(data, list) and len(data) > 0:
         first_item = data[0]
