@@ -40,16 +40,14 @@ params = {
 
 response = requests.get(url, params=params)
 
-# Debugging: Print the raw response text to check for issues
-st.write("Raw Response:", response.text)
-
-# Check if the response is empty or failed
+# Check the status code and response content
 if response.status_code == 200:
-    try:
-        # Ensure the response is a valid JSON
-        if response.text.strip() == "":
-            st.error("Received an empty response from the API.")
-        else:
+    # If the response text is empty
+    if not response.text.strip():
+        st.error("Received an empty response from the API.")
+    else:
+        try:
+            # Attempt to parse the response as JSON
             data = response.json()
             if not data:  # No data case
                 st.error("No data available for the requested odds.")
@@ -176,7 +174,7 @@ if response.status_code == 200:
             # If no data was returned
             else:
                 st.error("No data found for the requested leagues.")
-    except Exception as e:
-        st.error(f"Error processing the data: {str(e)}")
+        except Exception as e:
+            st.error(f"Error processing the data: {str(e)}")
 else:
     st.error(f"Error fetching data. HTTP Status Code: {response.status_code}")
