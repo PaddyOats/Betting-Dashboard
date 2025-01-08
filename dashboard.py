@@ -13,15 +13,17 @@ st.subheader("Daily Bets")
 url = f"https://api.the-odds-api.com/v4/sports/soccer/odds?apiKey={api_key}&regions=eu"
 response = requests.get(url)
 
+# Display the raw response for inspection
+st.write("API Response Status:", response.status_code)
 if response.status_code == 200:
     data = response.json()
-
-    # Show the entire data structure
-    st.write("Raw API Data:", data)  # Display the full data response to inspect the structure
+    
+    # Displaying the entire API response for debugging
+    st.write("Raw API Response:", data)  # This should print the whole response
 
     if isinstance(data, list) and len(data) > 0:
         first_item = data[0]
-        st.write("First item in data:", first_item)  # Show the first item in the list
+        st.write("First item in the response:", first_item)  # Show the first item in the list
 
         # Display the fields of the first item
         st.write("Fields in the first item:", first_item.keys())
