@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 
 # API endpoint and key
-url = "https://api.the-odds-api.com/v4/sports/soccer_spl/odds"
+url = "https://api.the-odds-api.com/v4/sports/odds"
 api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API Key
 
 # Function to convert decimal odds to fractional odds
@@ -35,6 +35,7 @@ params = {
     'regions': 'eu',  # Filter for European region (Ireland, UK)
     'markets': 'h2h',  # Head-to-head odds
     'oddsFormat': 'decimal',  # Decimal odds format
+    'leagues': 'soccer_epl,soccer_seriea,soccer_laliga,soccer_bundesliga,soccer_spl'  # Add more leagues
 }
 
 response = requests.get(url, params=params)
@@ -47,6 +48,10 @@ if response.status_code == 200 and data:
     # Prepare a list to store data for the table
     table_data = []
 
+    # Initialize variable to store best bet of the day
+    best_bet_of_day = None
+    best_bet_odds = None
+    
     # Iterate through matches
     for match in data:
         home_team = match['home_team']
@@ -104,6 +109,26 @@ if response.status_code == 200 and data:
         # Add bookmaker odds data to table
         table_data.append(bookmaker_odds)
 
+        # Calculate best bet of the day
+        home_odds_list = [bookmaker_odds[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if bookmaker_odds[bookmaker]['Home Team Odds']]
+        away_odds_list = [bookmaker_odds[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if bookmaker_odds[bookmaker]['Away Team Odds']]
+        draw_odds_list = [bookmaker_odds[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if bookmaker_odds[bookmaker]['Draw Odds']]
+        
+        min_home_odds = min(home_odds_list) if home_odds_list else None
+        min_away_odds = min(away_odds_list) if away_odds_list else None
+        min_draw_odds = min(draw_odds_list) if draw_odds_list else None
+        
+        # Find the best bet for the day (i.e., highest odds for a home win, away win, or draw)
+        if min_home_odds and (best_bet_odds is None or min_home_odds > best_bet_odds):
+            best_bet_of_day = f"{home_team} to win"
+            best_bet_odds = min_home_odds
+        elif min_away_odds and (best_bet_odds is None or min_away_odds > best_bet_odds):
+            best_bet_of_day = f"{away_team} to win"
+            best_bet_odds = min_away_odds
+        elif min_draw_odds and (best_bet_odds is None or min_draw_odds > best_bet_odds):
+            best_bet_of_day = "Draw"
+            best_bet_odds = min_draw_odds
+
     # Create a dataframe from the table data
     df = pd.DataFrame(table_data)
 
@@ -132,6 +157,10 @@ if response.status_code == 200 and data:
 
     # Display the table
     st.dataframe(df)
+
+    # Add a section for Bet of the Day
+    st.subheader("Bet of the Day")
+    st.write(f"**Best Bet of the Day:** {best_bet_of_day} with odds {best_bet_odds}")
 
 else:
     st.error("Failed to fetch data or no data available.")
