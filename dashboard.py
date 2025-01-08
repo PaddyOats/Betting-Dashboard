@@ -1,6 +1,7 @@
 import requests
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
 # API endpoint and key
 url = "https://api.the-odds-api.com/v4/sports/soccer_spl/odds"
@@ -22,10 +23,13 @@ def find_gcd(a, b):
         a, b = b, a % b
     return a
 
+# Filtered bookmakers in Ireland and the UK
+allowed_bookmakers = ['Marathon Bet', '888sport', 'Coolbet', 'Bet365', 'William Hill', 'Paddy Power']
+
 # Fetch odds data
 params = {
     'apiKey': api_key,
-    'regions': 'us',  # Filter for specific region (if needed)
+    'regions': 'eu',  # Filter for European region (Ireland, UK)
     'markets': 'h2h',  # Head-to-head odds
     'oddsFormat': 'decimal',  # Decimal odds format
 }
@@ -45,24 +49,28 @@ if response.status_code == 200 and data:
         match_id = match['id']
         home_team = match['home_team']
         away_team = match['away_team']
-
+        league = match['sport_title']
+        match_date = datetime.strptime(match['commence_time'], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d %H:%M:%S")
+        
         # Iterate through bookmakers
         for bookmaker in match['bookmakers']:
             bookmaker_name = bookmaker['title']
+            
+            # Check if the bookmaker is in the allowed list
+            if bookmaker_name in allowed_bookmakers:
+                # Iterate through markets and outcomes
+                for market in bookmaker['markets']:
+                    if market['key'] == 'h2h':  # Head-to-head market
+                        for outcome in market['outcomes']:
+                            team_name = outcome['name']
+                            decimal_odds = outcome['price']
+                            fractional_odds = decimal_to_fraction(decimal_odds)
 
-            # Iterate through markets and outcomes
-            for market in bookmaker['markets']:
-                if market['key'] == 'h2h':  # Head-to-head market
-                    for outcome in market['outcomes']:
-                        team_name = outcome['name']
-                        decimal_odds = outcome['price']
-                        fractional_odds = decimal_to_fraction(decimal_odds)
-
-                        # Append data for the table
-                        table_data.append([home_team, away_team, bookmaker_name, team_name, decimal_odds, fractional_odds])
+                            # Append data for the table (one row per match)
+                            table_data.append([league, match_date, home_team, away_team, bookmaker_name, team_name, decimal_odds, fractional_odds])
 
     # Create a dataframe from the table data
-    df = pd.DataFrame(table_data, columns=["Home Team", "Away Team", "Bookmaker", "Team", "Decimal Odds", "Fractional Odds"])
+    df = pd.DataFrame(table_data, columns=["League", "Date", "Home Team", "Away Team", "Bookmaker", "Team", "Decimal Odds", "Fractional Odds"])
 
     # Display the table
     st.dataframe(df)
