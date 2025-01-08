@@ -59,9 +59,13 @@ if response.status_code == 200 and data:
             'Date': match_date,
             'Home Team': home_team,
             'Away Team': away_team,
-            'Best Bet': [],
+            'Best Bet': '',
         }
         
+        # Initialize bookmaker columns
+        for bookmaker in allowed_bookmakers:
+            bookmaker_odds[bookmaker] = {}
+
         # Add the odds from each bookmaker
         for bookmaker in match['bookmakers']:
             bookmaker_name = bookmaker['title']
@@ -89,7 +93,7 @@ if response.status_code == 200 and data:
                             elif outcome['name'] == "Draw":
                                 draw_odds = outcome['price']
                                 draw_fractions = decimal_to_fraction(draw_odds)
-                        
+
                         # Store the fractional odds for each bookmaker
                         bookmaker_odds[bookmaker_name] = {
                             'Home Team Odds': home_fractions,
@@ -106,9 +110,9 @@ if response.status_code == 200 and data:
     # Highlight best bet for each fixture based on lowest odds
     def get_best_bet(row):
         # Extract the odds for home, away, and draw
-        home_odds = [row[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
-        away_odds = [row[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
-        draw_odds = [row[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
+        home_odds = [row[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
+        away_odds = [row[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
+        draw_odds = [row[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
 
         # Find the best bet based on the lowest odds
         min_home = min(home_odds) if home_odds else None
