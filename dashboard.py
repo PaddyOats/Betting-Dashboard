@@ -1,9 +1,26 @@
 import requests
 import streamlit as st
+import pandas as pd
 
 # API endpoint and key
 url = "https://api.the-odds-api.com/v4/sports/soccer_spl/odds"
 api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API Key
+
+# Function to convert decimal odds to fractional odds
+def decimal_to_fraction(decimal_odds):
+    numerator = decimal_odds - 1
+    denominator = 1
+    while (numerator % 1 != 0):
+        numerator *= 10
+        denominator *= 10
+    gcd = find_gcd(int(numerator), int(denominator))
+    return f"{int(numerator / gcd)}/{int(denominator / gcd)}"
+
+# Function to find GCD for simplification
+def find_gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
 
 # Fetch odds data
 params = {
@@ -20,18 +37,35 @@ data = response.json()
 if response.status_code == 200 and data:
     st.title("Sports Betting Dashboard")
     
+    # Prepare a list to store data for the table
+    table_data = []
+
+    # Iterate through matches
     for match in data:
-        st.subheader(f"{match['home_team']} vs {match['away_team']}")
+        match_id = match['id']
+        home_team = match['home_team']
+        away_team = match['away_team']
 
-        # Iterate through bookmakers and display odds
+        # Iterate through bookmakers
         for bookmaker in match['bookmakers']:
-            st.write(f"Bookmaker: {bookmaker['title']}")
+            bookmaker_name = bookmaker['title']
 
-            # Iterate through markets and display outcomes
+            # Iterate through markets and outcomes
             for market in bookmaker['markets']:
                 if market['key'] == 'h2h':  # Head-to-head market
                     for outcome in market['outcomes']:
-                        st.write(f"  Team: {outcome['name']} | Odds: {outcome['price']}")
+                        team_name = outcome['name']
+                        decimal_odds = outcome['price']
+                        fractional_odds = decimal_to_fraction(decimal_odds)
+
+                        # Append data for the table
+                        table_data.append([home_team, away_team, bookmaker_name, team_name, decimal_odds, fractional_odds])
+
+    # Create a dataframe from the table data
+    df = pd.DataFrame(table_data, columns=["Home Team", "Away Team", "Bookmaker", "Team", "Decimal Odds", "Fractional Odds"])
+
+    # Display the table
+    st.dataframe(df)
 
 else:
     st.error("Failed to fetch data or no data available.")
