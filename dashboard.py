@@ -6,7 +6,7 @@ import requests
 st.title("Betting Dashboard")
 
 # Input: Odds API Key
-api_key = 2ae55a4b733022aba15d177da16e7251
+api_key = "2ae55a4b733022aba15d177da16e7251"
 
 # Fetching sample data
 st.subheader("Daily Bets")
