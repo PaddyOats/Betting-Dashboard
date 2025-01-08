@@ -1,54 +1,37 @@
-import streamlit as st
-import pandas as pd
 import requests
-import json
+import streamlit as st
 
-# Title
-st.title("Betting Dashboard")
+# API endpoint and key
+url = "https://api.the-odds-api.com/v4/sports/soccer_spl/odds"
+api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API Key
 
-# Input: Odds API Key
-api_key = '2ae55a4b733022aba15d177da16e7251'  # Your actual API key
+# Fetch odds data
+params = {
+    'apiKey': api_key,
+    'regions': 'us',  # Filter for specific region (if needed)
+    'markets': 'h2h',  # Head-to-head odds
+    'oddsFormat': 'decimal',  # Decimal odds format
+}
 
-# Fetching sample data
-st.subheader("Daily Bets")
-url = f"https://api.the-odds-api.com/v4/sports/soccer/odds?apiKey={api_key}&regions=eu"
-response = requests.get(url)
+response = requests.get(url, params=params)
+data = response.json()
 
-# Display the raw response for inspection
-st.write("API Response Status:", response.status_code)
-if response.status_code == 200:
-    data = response.json()
+# Check if the data exists and if it's in the expected format
+if response.status_code == 200 and data:
+    st.title("Sports Betting Dashboard")
     
-    # Displaying the entire API response for debugging
-    st.text(json.dumps(data, indent=4))  # This will print the response in a readable format
+    for match in data:
+        st.subheader(f"{match['home_team']} vs {match['away_team']}")
 
-    if isinstance(data, list) and len(data) > 0:
-        first_item = data[0]
-        st.write("First item in the response:", first_item)  # Show the first item in the list
+        # Iterate through bookmakers and display odds
+        for bookmaker in match['bookmakers']:
+            st.write(f"Bookmaker: {bookmaker['title']}")
 
-        # Display the fields of the first item
-        st.write("Fields in the first item:", first_item.keys())
+            # Iterate through markets and display outcomes
+            for market in bookmaker['markets']:
+                if market['key'] == 'h2h':  # Head-to-head market
+                    for outcome in market['outcomes']:
+                        st.write(f"  Team: {outcome['name']} | Odds: {outcome['price']}")
 
-        # Check if 'bookmakers' exists and display it
-        bookmakers = first_item.get('bookmakers', [])
-        if bookmakers:
-            st.write("Bookmakers data found:", bookmakers)
-
-            for bookmaker in bookmakers:
-                bookmaker_name = bookmaker.get('title', 'No title')
-                st.write(f"Bookmaker: {bookmaker_name}")
-
-                # Extract odds from outcomes
-                markets = bookmaker.get('markets', [])
-                for market in markets:
-                    outcomes = market.get('outcomes', [])
-                    for outcome in outcomes:
-                        team_name = outcome.get('name', 'No team name')
-                        odds = outcome.get('price', 'No odds available')
-                        st.write(f"  Team: {team_name} | Odds: {odds}")
-        else:
-            st.write("No bookmakers data found in the first item.")
-    else:
-        st.write("Data is empty or malformed.")
 else:
-    st.write("Error fetching odds data!")
+    st.error("Failed to fetch data or no data available.")
