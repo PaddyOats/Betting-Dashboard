@@ -9,6 +9,7 @@ api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API Key
 
 # Function to convert decimal odds to fractional odds
 def decimal_to_fraction(decimal_odds):
+    # Convert decimal to fraction and simplify
     numerator = decimal_odds - 1
     denominator = 1
     while (numerator % 1 != 0):
@@ -46,7 +47,6 @@ if response.status_code == 200 and data:
 
     # Iterate through matches
     for match in data:
-        match_id = match['id']
         home_team = match['home_team']
         away_team = match['away_team']
         league = match['sport_title']
@@ -54,16 +54,15 @@ if response.status_code == 200 and data:
         
         # Prepare dictionary to store odds for each bookmaker
         bookmaker_odds = {
-            'Bookmaker': [],
-            'Home Team Odds': [],
-            'Away Team Odds': [],
-            'Draw Odds': [],
-            'Home Fractional Odds': [],
-            'Away Fractional Odds': [],
-            'Draw Fractional Odds': []
+            'Fixture': f"{home_team} vs {away_team}",
+            'League': league,
+            'Date': match_date,
+            'Home Team': home_team,
+            'Away Team': away_team,
+            'Best Bet': [],
         }
         
-        # Iterate through bookmakers
+        # Add the odds from each bookmaker
         for bookmaker in match['bookmakers']:
             bookmaker_name = bookmaker['title']
             
@@ -90,38 +89,42 @@ if response.status_code == 200 and data:
                             elif outcome['name'] == "Draw":
                                 draw_odds = outcome['price']
                                 draw_fractions = decimal_to_fraction(draw_odds)
+                        
+                        # Store the fractional odds for each bookmaker
+                        bookmaker_odds[bookmaker_name] = {
+                            'Home Team Odds': home_fractions,
+                            'Away Team Odds': away_fractions,
+                            'Draw Odds': draw_fractions
+                        }
 
-                        # Add the bookmaker odds and fractional odds to the table
-                        bookmaker_odds['Bookmaker'].append(bookmaker_name)
-                        bookmaker_odds['Home Team Odds'].append(home_odds)
-                        bookmaker_odds['Away Team Odds'].append(away_odds)
-                        bookmaker_odds['Draw Odds'].append(draw_odds)
-                        bookmaker_odds['Home Fractional Odds'].append(home_fractions)
-                        bookmaker_odds['Away Fractional Odds'].append(away_fractions)
-                        bookmaker_odds['Draw Fractional Odds'].append(draw_fractions)
-
-        # Predict outcome based on odds (simple comparison)
-        home_odds_best = min(bookmaker_odds['Home Team Odds'])
-        away_odds_best = min(bookmaker_odds['Away Team Odds'])
-
-        if home_odds_best < away_odds_best:
-            predicted_outcome = f"Home Win ({home_team})"
-        elif home_odds_best > away_odds_best:
-            predicted_outcome = f"Away Win ({away_team})"
-        else:
-            predicted_outcome = "Draw"
-        
-        # Add the predicted outcome to the table
-        bookmaker_odds['Bookmaker'].append("Prediction")
-        bookmaker_odds['Home Team Odds'].append("")
-        bookmaker_odds['Away Team Odds'].append("")
-        bookmaker_odds['Draw Odds'].append("")
-        bookmaker_odds['Home Fractional Odds'].append("")
-        bookmaker_odds['Away Fractional Odds'].append("")
-        bookmaker_odds['Draw Fractional Odds'].append(predicted_outcome)
+        # Add bookmaker odds data to table
+        table_data.append(bookmaker_odds)
 
     # Create a dataframe from the table data
-    df = pd.DataFrame(bookmaker_odds)
+    df = pd.DataFrame(table_data)
+
+    # Highlight best bet for each fixture based on lowest odds
+    def get_best_bet(row):
+        # Extract the odds for home, away, and draw
+        home_odds = [row[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
+        away_odds = [row[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
+        draw_odds = [row[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if bookmaker in row]
+
+        # Find the best bet based on the lowest odds
+        min_home = min(home_odds) if home_odds else None
+        min_away = min(away_odds) if away_odds else None
+        min_draw = min(draw_odds) if draw_odds else None
+
+        if min_home and min_home <= min_away and min_home <= min_draw:
+            return f"Best Bet: Home Win ({row['Home Team']})"
+        elif min_away and min_away <= min_home and min_away <= min_draw:
+            return f"Best Bet: Away Win ({row['Away Team']})"
+        elif min_draw and min_draw <= min_home and min_draw <= min_away:
+            return "Best Bet: Draw"
+        return "No clear best bet"
+
+    # Apply the best bet function to the dataframe
+    df['Best Bet'] = df.apply(get_best_bet, axis=1)
 
     # Display the table
     st.dataframe(df)
