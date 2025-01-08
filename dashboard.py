@@ -15,19 +15,22 @@ response = requests.get(url)
 
 if response.status_code == 200:
     data = response.json()
-    # Display the raw response to understand its structure
-    st.write(data)  # Print the raw API response to debug
+    st.write("Raw API Data:", data)  # Display raw response for inspection
+
+    # Check if bookmakers exist in the data
+    if isinstance(data, list) and len(data) > 0:
+        first_item = data[0]
+        st.write("First item in data:", first_item)  # Show first data item
+        bookmakers = first_item.get('bookmakers', [])
+        
+        # Check if bookmakers exist
+        if bookmakers:
+            st.write("Bookmakers data:", bookmakers)
+            for bookmaker in bookmakers:
+                st.write(f"Bookmaker: {bookmaker.get('title', 'Unknown')} Odds: {bookmaker.get('odds', 'No odds available')}")
+        else:
+            st.write("No bookmakers data found.")
+    else:
+        st.write("Data is empty or malformed.")
 else:
     st.write("Error fetching odds data!")
-
-# Best Odds of the Day (Optional: This part is to identify the bet with the best odds)
-st.subheader("Best Odds of the Day")
-if response.status_code == 200 and data:
-    try:
-        # Check if bookmakers and odds exist in the response
-        best_bet = max(data, key=lambda x: max([b['odds'] for b in x.get('bookmakers', [])])) 
-        st.write(f"Best Odds: {best_bet['bookmakers'][0]['odds']}")
-    except KeyError as e:
-        st.write(f"Error processing best bet: {e}")
-else:
-    st.write("Error fetching or processing data.")
