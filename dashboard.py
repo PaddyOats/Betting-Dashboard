@@ -9,6 +9,8 @@ api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API Key
 
 # Function to convert decimal odds to fractional odds
 def decimal_to_fraction(decimal_odds):
+    if decimal_odds is None:
+        return None
     # Convert decimal to fraction and simplify
     numerator = decimal_odds - 1
     denominator = 1
@@ -64,7 +66,11 @@ if response.status_code == 200 and data:
         
         # Initialize bookmaker columns
         for bookmaker in allowed_bookmakers:
-            bookmaker_odds[bookmaker] = {}
+            bookmaker_odds[bookmaker] = {
+                'Home Team Odds': None,
+                'Away Team Odds': None,
+                'Draw Odds': None
+            }
 
         # Add the odds from each bookmaker
         for bookmaker in match['bookmakers']:
@@ -78,27 +84,21 @@ if response.status_code == 200 and data:
                         home_odds = None
                         away_odds = None
                         draw_odds = None
-                        home_fractions = None
-                        away_fractions = None
-                        draw_fractions = None
                         
                         # Find odds for each outcome
                         for outcome in market['outcomes']:
                             if outcome['name'] == home_team:
                                 home_odds = outcome['price']
-                                home_fractions = decimal_to_fraction(home_odds)
                             elif outcome['name'] == away_team:
                                 away_odds = outcome['price']
-                                away_fractions = decimal_to_fraction(away_odds)
                             elif outcome['name'] == "Draw":
                                 draw_odds = outcome['price']
-                                draw_fractions = decimal_to_fraction(draw_odds)
 
-                        # Store the fractional odds for each bookmaker
+                        # Convert decimal odds to fractional odds
                         bookmaker_odds[bookmaker_name] = {
-                            'Home Team Odds': home_fractions,
-                            'Away Team Odds': away_fractions,
-                            'Draw Odds': draw_fractions
+                            'Home Team Odds': decimal_to_fraction(home_odds),
+                            'Away Team Odds': decimal_to_fraction(away_odds),
+                            'Draw Odds': decimal_to_fraction(draw_odds)
                         }
 
         # Add bookmaker odds data to table
@@ -110,9 +110,9 @@ if response.status_code == 200 and data:
     # Highlight best bet for each fixture based on lowest odds
     def get_best_bet(row):
         # Extract the odds for home, away, and draw
-        home_odds = [row[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
-        away_odds = [row[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
-        draw_odds = [row[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if isinstance(row[bookmaker], dict)]
+        home_odds = [row[bookmaker]['Home Team Odds'] for bookmaker in allowed_bookmakers if row[bookmaker]['Home Team Odds']]
+        away_odds = [row[bookmaker]['Away Team Odds'] for bookmaker in allowed_bookmakers if row[bookmaker]['Away Team Odds']]
+        draw_odds = [row[bookmaker]['Draw Odds'] for bookmaker in allowed_bookmakers if row[bookmaker]['Draw Odds']]
 
         # Find the best bet based on the lowest odds
         min_home = min(home_odds) if home_odds else None
