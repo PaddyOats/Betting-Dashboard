@@ -12,6 +12,7 @@ def decimal_to_fraction(decimal_odds):
         return "N/A"
 
 # Function to fetch data from the Odds API
+@st.cache(ttl=3600)  # Cache API response for 1 hour to reduce calls
 def fetch_odds_data():
     api_key = "2ae55a4b733022aba15d177da16e7251"  # Your API key
     url = "https://api.the-odds-api.com/v4/sports/odds"
@@ -95,4 +96,3 @@ if data:
 
 else:
     st.write("No data available.")
-
